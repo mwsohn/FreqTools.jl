@@ -147,7 +147,7 @@ function _tab1(na::NamedArray; sort=false, digits=2)
 
     PrettyTables.pretty_table(ar,
         row_labels = rownames,
-        row_label_column_title=na.dimnames[1],
+        row_label_column_title=string(na.dimnames[1]),
         header=["Counts", " Percent", "Cum Pct"],
         formatters= (v,i,j) -> j in (2,3) ? Printf.format(fmt,v) : @sprintf("%.0d", v), 
         crop=:none,
