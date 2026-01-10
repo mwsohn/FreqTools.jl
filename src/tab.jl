@@ -267,60 +267,50 @@ end
 
 function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=nothing, varnames = nothing, digits=2)
 
-    mm = hcat(var1, var2, sumvar)
-
+    df = DataFrame(t1=var1, t2=var2, tsumvar=sumvar)
     if skipmissing == true
-        m = vec(sum(ismissing.(mm), dims=2) .== false)
+        ba = completecases(df)
     else
-        m = vec(ismissing.(mm[:, 3]) .== false)
+        ba = completecases(df[:, [:tsumvar]])
     end
-    mm2 = mm[m, :]
+    df = df[ba, :]
 
-    vv1 = sort(unique(var1[m]))
-    vv2 = sort(unique(var2[m]))
+    vv1 = sort(unique(df[:, :t1]))
+    vv2 = sort(unique(df[:, :t2]))
     nrows = length(vv1)
     ncols = length(vv2)
 
     # allocate memory for output matrix
     omat = Matrix{Union{Missing,Any}}(missing, nrows + 1, ncols + 1)
-    for (i, v1) in enumerate(vv1)
-        # row margin
-        if ismissing(v1)
-            subm1 = @view mm2[ismissing.(mm2[:, 1]), :]
+
+    # let's implement this using groupby
+    for subdf in groupby(df, [:t1, :t2], sort=true)
+        i = findfirst(x -> x == subdf[1, :t1], vv1)
+        j = findfirst(x -> x == subdf[1, :t2], vv2)
+        if size(subdf, 1) == 0
+            omat[i, j] = tuple(NaN, NaN, 0)
         else
-            subm1 = @view mm2[[!ismissing(x) && x == v1 for x in mm2[:, 1]], :]
-        end
-        omat[i, ncols+1] = tuple(mean(subm1[:,3]), std(subm1[:, 3]), size(subm1, 1))
-
-        for (j, v2) in enumerate(vv2)
-            if ismissing(v1) && !ismissing(v2)
-                subm2 = @view subm1[[ismissing(x[1]) && x[2] == v2 for x in eachrow(subm1[:, 1:2])], :]
-            elseif !ismissing(v1) && ismissing(v2)
-                subm2 = @view subm1[[ismissing(x[2]) && x[1] == v1 for x in eachrow(subm1[:, 1:2])], :]
-            else
-                subm2 = @view subm1[[!ismissing(x[1]) && x == (v1, v2) for x in tuple.(subm1[:, 1], subm1[:, 2])], :]
-            end
-            if size(subm2,1) == 0
-                omat[i, j] = tuple(NaN, NaN, 0)    
-            else
-                omat[i, j] = tuple(mean(subm2[:, 3]), std(subm2[:, 3]), size(subm2, 1))
-            end
-            if i == 1
-                if ismissing(v2)
-                    subm2 = @view mm2[ismissing.(mm2[:, 2]), :]
-                else
-                    subm2 = @view mm2[[!ismissing(x) && x == v2 for x in mm2[:, 2]], :]
-                end
-
-                if size(subm2,1) == 0
-                    omat[i, j] = tuple(NaN, NaN, 0)    
-                else
-                    omat[nrows+1, j] = tuple(mean(subm2[:, 3]), std(subm2[:, 3]), size(subm2, 1))
-                end
-            end
+            omat[i, j] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
         end
     end
-    omat[nrows+1, ncols+1] = tuple(mean(mm2[:, 3]), std(mm2[:, 3]), size(mm2, 1))
+
+    for subdf in groupby(df, :t1, sort=true)
+        i = findfirst(x -> x == subdf[1, :t1], vv1)
+        if size(subdf, 1) == 0
+            omat[i, ncols+1] = tuple(NaN, NaN, 0)
+        else
+            omat[i, ncols+1] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
+        end
+    end
+    for subdf in groupby(df, :t2, sort=true)
+        j = findfirst(x -> x == subdf[1, :t2], vv2)
+        if size(subdf, 1) == 0
+            omat[nrows+1, j] = tuple(NaN, NaN, 0)
+        else
+            omat[nrows+1, j] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
+        end
+    end
+    omat[nrows+1, ncols+1] = tuple(mean(df[:, :tsumvar]), std(df[:, :tsumvar]), size(df, 1))
 
     # value labels and "Total"
     rownames = string.(vcat(vv1, "Total"))
