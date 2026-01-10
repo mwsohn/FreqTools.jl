@@ -207,7 +207,7 @@ function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce, digits = 2)
 
     pretty_table(d,
         row_labels=rownames2,
-        row_label_column_title=string(na.dimnames[1], " \ ", na.dimnames[2]),
+        row_label_column_title=string(na.dimnames[1], " \\ ", na.dimnames[2]),
         header=colnames,
         crop=:none,
         formatters=(v, i, _) -> (cnt == 1 || i % cnt == 1) ? @sprintf("%.0f", v) : Printf.format(fmt,v),
