@@ -300,14 +300,23 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
             else
                 subm2 = @view subm1[[!ismissing(x[1]) && x == (v1, v2) for x in tuple.(subm1[:, 1], subm1[:, 2])], :]
             end
-            omat[i, j] = tuple(mean(subm2[:, 3]), std(subm2[:, 3]), size(subm2, 1))
+            if size(subm2,1) == 0
+                omat[i, j] = tuple(NaN, NaN, 0)    
+            else
+                omat[i, j] = tuple(mean(subm2[:, 3]), std(subm2[:, 3]), size(subm2, 1))
+            end
             if i == 1
                 if ismissing(v2)
                     subm2 = @view mm2[ismissing.(mm2[:, 2]), :]
                 else
                     subm2 = @view mm2[[!ismissing(x) && x == v2 for x in mm2[:, 2]], :]
                 end
-                omat[nrows+1, j] = tuple(mean(subm2[:, 3]), std(subm2[:, 3]), size(subm2, 1))
+
+                if size(subm2,1) == 0
+                    omat[i, j] = tuple(NaN, NaN, 0)    
+                else
+                    omat[nrows+1, j] = tuple(mean(subm2[:, 3]), std(subm2[:, 3]), size(subm2, 1))
+                end
             end
         end
     end
