@@ -3,7 +3,7 @@
     tab(na::NamedArray)
     tab(m::Matrix)
 
-Produces an one-way or two-way frequency table from a DataFrame or a NamedArray returned from
+Produces an one-way or two-way frequency table from a DataFrame, other Tables objects, or a NamedArray returned from
 `freqtable` function. `tab` is mainly a wrapper for the excellent `FreqTables` package.
 
 Use `skipmissing = false` to obtain frequencies that include `missing` values.
@@ -22,11 +22,11 @@ where `r` indicates "row" percents, `c` "column" percents, and `e` "cell" percen
 
 If input is a matrix of counts, a Pearson chi-square test will be performed. 
 """
-function tab(na::NamedArray; skipmissing=true, pct=:rce)
+function tab(na::NamedArray; skipmissing=true, pct=:rce, digits=2)
 
     len = length(na.dimnames)
     if len == 1
-        _tab1(na; skipmissing=skipmissing)
+        _tab1(na; skipmissing=skipmissing, digits=digits)
     elseif len == 2
         _tab2(na; skipmissing=skipmissing, pct=pct)
     elseif len == 3
@@ -34,25 +34,28 @@ function tab(na::NamedArray; skipmissing=true, pct=:rce)
     end
     throw(ArgumentError("Crosstabs for more than 3 variables are not currently supported."))
 end
-function tab(indf, var::Union{Symbol,String}; skipmissing=true, sort=false, summarize=nothing)
-    if in(string(var), names(indf)) == false
-        throw(ArgumentError("$var is not found in the input DataFrame."))
+function tab(indf, var::Union{Symbol,String}; skipmissing=true, sort=false, summarize=nothing, digits = 2)
+    s = Tables.schema(indf)
+    if in(Symbol(var), s.names) == false
+        throw(ArgumentError("$var is not found in the input table."))
         return nothing
     end
     if summarize != nothing
-        return _tab1summarize(indf, var, summarize, skipmissing=skipmissing)
+        return _tab1summarize(Tables.getcolumn(indf, var), Tables.getcolumn(indf, summarize), skipmissing=skipmissing, digits = digits, varname=string(var))
     end
-    _tab1(freqtable(indf, var, skipmissing=skipmissing); sort=sort)
+    _tab1(freqtable(indf, var, skipmissing=skipmissing); sort=sort, digits=digits)
 end
 function tab(ivar::AbstractVector; skipmissing=true, sort=false)
     _tab1(freqtable(ivar, skipmissing=skipmissing); sort=sort)
 end
-function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}; pct=:rce, maxrows=-1, maxcols=20, skipmissing=true, summarize=nothing)
-    if in(string(var1), names(indf)) == false
+function tab(indf,var1::Union{Symbol,String}, var2::Union{Symbol,String}; pct=:rce, maxrows=-1, maxcols=20, skipmissing=true, summarize=nothing, digits=2)
+
+    s = Tables.schema(indf)
+    if in(Symbol(var1), s.names) == false
         throw(ArgumentError("$var1 is not found in the input DataFrame."))
         return nothing
     end
-    if in(string(var2), names(indf)) == false
+    if in(Symbol(var2), s.names) == false
         throw(ArgumentError("$var2 is not found in the input DataFrame."))
         return nothing
     end
@@ -60,12 +63,20 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}; pct=:
         return _tab2(freqtable(indf, var1, var2, skipmissing=skipmissing); pct=pct, maxrows=maxrows, maxcols=maxcols)
     end
 
-    _tab2summarize(indf, var1, var2, summarize; maxrows=-1, maxcols=20)
+    _tab2summarize(Tables.getcolumn(indf,var1), 
+        Tables.getcolumn(indf,var2), 
+        Tables.getcolumn(indf,summarize); 
+        maxrows=-1, 
+        maxcols=20,
+        varnames = string(var1," \ ", var2),
+        digits=digits)
 end
 function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3::Union{Symbol,String};
-    pct=:rce, maxrows=-1, maxcols=20, skipmissing=true, summarize=nothing)
+    pct=:rce, maxrows=-1, maxcols=20, skipmissing=true, summarize=nothing, digits=2)
+
+    s = Tables.schema(indf)
     for v in (var1, var2, var3)
-        if in(string(v), names(indf)) == false
+        if in(Symbol(v), s.names) == false
             throw(ArgumentError("$v is not found in the input DataFrame."))
             return nothing
         end
@@ -87,18 +98,23 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
         for v in n3
             println("\n\n", var3, " = ", v, "\n")
 
-            _tab2summarize(filter(x -> x[var3] == v, indf), var1, var2, summarize; maxrows=-1, maxcols=20)
+            subdf = filter(x -> x[var3] == v, indf),
+            _tab2summarize(Tables.getcolumn(subdf,var1), 
+                Tables.getcolumn(subdf,var2), 
+                Tables.getcolumn(subdf,summarize); maxrows=-1, maxcols=20, 
+                digits=digits, varnames = string(var1," \ ",var2))
         end
     end
 end
-function tab(a::AbstractArray; pct=:rce)
+function tab(a::AbstractArray; pct=:rce, digits=2)
     if length(size(a)) == 2 && all(x -> x >= 2, a)
-        _tab2(NamedArray(a), pct=pct)
+        _tab2(NamedArray(a), pct=pct, digits=digits)
     else
         throw(ArgumentError("Input array must be 2x2 and have at least two levels on each dimension."))
     end
 end
-function _tab1(na::NamedArray; sort=false)
+
+function _tab1(na::NamedArray; sort=false, digits=2)
 
     # do not output rows with zeros
     z = findall(x -> x != 0, na.array)
@@ -125,17 +141,21 @@ function _tab1(na::NamedArray; sort=false)
     # cumulative percents
     cumpct = 100 .* vcat(cumsum(arry, dims=1), counts[end]) ./ counts[end]
 
-    ar = hcat(rownames, counts, percents, cumpct)
+    ar = hcat(counts, percents, cumpct)
+
+    fmt = Printf.Format("%.$(digits)f")
 
     PrettyTables.pretty_table(ar,
-        header=[na.dimnames[1], "Counts", " Percent", "Cum Pct"],
-        formatters=ft_printf("%.3f", [3, 4]),
+        row_labels = rownames,
+        row_label_column_title=na.dimnames[1],
+        header=["Counts", " Percent", "Cum Pct"],
+        formatters= (v,i,j) -> j in (2,3) ? Printf.format(fmt,v) : @sprintf("%.0d", v), 
         crop=:none,
         hlines=[0, 1, length(rownames), length(rownames) + 1],
         vlines=[1])
 end
 
-function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce)
+function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce, digits = 2)
 
     # counts
     counts = na.array
@@ -183,12 +203,14 @@ function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce)
     # add blank cells
     rownames2 = vcat([vcat(x, fill(" ", cnt - 1)) for x in rownames]...)
 
+    fmt = Printf.Format("%.$(digits)f")
+
     pretty_table(d,
         row_labels=rownames2,
-        row_label_column_title=string(na.dimnames[1], " / ", na.dimnames[2]),
+        row_label_column_title=string(na.dimnames[1], " \ ", na.dimnames[2]),
         header=colnames,
         crop=:none,
-        formatters=(v, i, _) -> (cnt == 1 || i % cnt == 1) ? @sprintf("%.0f", v) : @sprintf("%.3f", v),
+        formatters=(v, i, _) -> (cnt == 1 || i % cnt == 1) ? @sprintf("%.0f", v) : Printf.format(fmt,v),
         max_num_of_rows=maxrows,
         max_num_of_columns=maxcols,
         hlines=vcat([0, 1], cnt == 1 ? [nrow,nrow+1] : [x * cnt + 1 for x in 1:(nrow+1)]),
@@ -208,102 +230,117 @@ function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce)
     end
 end
 
-function _tab1summarize(indf, var, sumvar; skipmissing=false)
+function _tab1summarize(indf, var, sumvar; skipmissing=false, digits = 2, varname = nothing)
 
-    if skipmissing == true
-        ba = completecases(indf[!, [var, sumvar]])
+    if skipmissing == false
+        m = .!(ismissing.(var) .| ismissing.(sumvar))
     else
-        ba = completecases(indf[!, [sumvar]])
+        m = .!ismissing.(sumvar)
     end
-    indf2 = indf[ba, [var, sumvar]]
+    var2 = var[m]
+    sumvar2 = sumvar[m]
 
-    odf = combine(groupby(indf2, var, sort=true), nrow => :n, sumvar => mean => :mean, sumvar => std => :sd)
-    rownames = vcat(string.(odf[!, var]), "Total")
-    tdf = DataFrame(n=nrow(indf2), mean=mean(indf2[!, sumvar]), sd=std(indf2[!, sumvar]))
-    odf = vcat(odf[!, 2:end], tdf)
-    pretty_table(odf,
-        row_labels=rownames,
-        row_label_column_title=string(var),
-        formatters=(v, _, j) -> isnan(v) ? @sprintf(".") : (j % 3 != 1 ? @sprintf("%.3f", v) : @sprintf("%.0f", v)),
+    by = sort(unique(var2))
+    len = size(by, 1)
+
+    omat = Matrix{Float64}(undef, len + 1, 3)
+    @inbounds for (i, v) in enumerate(by)
+        if ismissing(v)
+            inc = [ismissing(x) ? true : false for x in var2]
+        else
+            inc = [x == v ? true : false for x in var2]
+        end
+        omat[i, 1:3] .= (sum(inc), mean_and_std(sumvar2[inc])...)
+    end
+    omat[len+1, 1:3] .= (length(var2), mean_and_std(sumvar2)...)
+
+    fmt = Printf.Format("%.$(digits)f")
+    pretty_table(omat,
+        row_labels=string.(vcat(by, "Total")),
+        row_label_column_title=varname == nothing ? "" : varname,
+        formatters=(v, _, j) -> isnan(v) ? "." : (j % 3 != 1 ? Printf.format(fmt, v) : @sprintf("%.0f", v)),
         header=["N", "Mean", "StDev"],
         crop=:none,
-        hlines=vcat([0, 1], nrow(odf), nrow(odf) + 1),
+        hlines=vcat([0, 1], len + 1, len + 2),
         vlines=[1])
 end
 
-function _tab2summarize(indf, var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=nothing)
+function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=nothing, varnames = nothing, digits=2)
+
+    mm = hcat(var1, var2, sumvar)
 
     if skipmissing == true
-        ba = completecases(indf[!, [var1, var2, sumvar]])
+        m = vec(sum(ismissing.(mm), dims=2) .== false)
     else
-        ba = completecases(indf[!, [sumvar]])
+        m = vec(ismissing.(mm[:, 3]) .== false)
     end
-    df2 = sort(indf[ba, [var1, var2, sumvar]], [var1, var2])
+    mm2 = mm[m, :]
 
-    na = freqtable(df2, var1, var2)
-    (nrows, ncols) = size(na)
-    rcvals = names(na)
+    vv1 = sort(unique(var1[m]))
+    vv2 = sort(unique(var2[m]))
+    nrows = length(vv1)
+    ncols = length(vv2)
 
     # allocate memory for output matrix
-    omat = Matrix{Union{Missing,Any}}(undef, (nrows + 1) * 3, ncols + 1)
-
-    # all cells, row and column margins
-    e = combine(groupby(df2, [var1, var2]), sumvar .=> [mean, std] .=> [:mean, :sd])
-    rtotal = combine(groupby(df2, var1), sumvar .=> [mean, std] .=> [:mean, :sd])
-    ctotal = combine(groupby(df2, var2), sumvar .=> [mean, std] .=> [:mean, :sd])
-
-    function eqtest(v1, v2)
-        if ismissing(v1) && ismissing(v2)
-            return true
-        elseif ismissing(v1) || ismissing(v2)
-            return false
-        elseif v1 == v2
-            return true
+    omat = Matrix{Union{Missing,Any}}(missing, nrows + 1, ncols + 1)
+    for (i, v1) in enumerate(vv1)
+        # row margin
+        if ismissing(v1)
+            subm1 = @view mm2[ismissing.(mm2[:, 1]), :]
+        else
+            subm1 = @view mm2[[!ismissing(x) && x == v1 for x in mm2[:, 1]], :]
         end
-        return false
-    end
+        omat[i, ncols+1] = tuple(mean_and_std(subm1[:, 3])..., size(subm1, 1))
 
-    for i = 1:nrows
-        r = i + (i - 1) * 2
-        for j = 1:ncols
-
-            dfr = findfirst(x -> eqtest(x[var1], rcvals[1][i]) && eqtest(x[var2], rcvals[2][j]), eachrow(e))
-            if dfr == nothing # no data for this group
-                omat[r:r+2, j] .= [missing, missing, 0]
-                continue
+        for (j, v2) in enumerate(vv2)
+            if ismissing(v1) && !ismissing(v2)
+                subm2 = @view subm1[[ismissing(x[1]) && x[2] == v2 for x in eachrow(subm1[:, 1:2])], :]
+            elseif !ismissing(v1) && ismissing(v2)
+                subm2 = @view subm1[[ismissing(x[2]) && x[1] == v1 for x in eachrow(subm1[:, 1:2])], :]
+            else
+                subm2 = @view subm1[[!ismissing(x[1]) && x == (v1, v2) for x in tuple.(subm1[:, 1], subm1[:, 2])], :]
             end
-
-            # mean, sd
-            omat[r:r+1, j] .= collect(e[dfr, [:mean, :sd]])
-
-            # n
-            omat[r+2, j] = na.array[i, j]
+            omat[i, j] = tuple(mean_and_std(subm2[:, 3])..., size(subm2, 1))
+            if i == 1
+                if ismissing(v2)
+                    subm2 = @view mm2[ismissing.(mm2[:, 2]), :]
+                else
+                    subm2 = @view mm2[[!ismissing(x) && x == v2 for x in mm2[:, 2]], :]
+                end
+                omat[nrows+1, j] = tuple(mean(subm2[:, 3]), std(subm2[:, 3]), size(subm2, 1))
+            end
         end
-
-        # row and column and grand totals
-        nn = nrows * 3
-        omat[1:nn, ncols+1] .= vec(hcat(Matrix{Any}(rtotal[:, 2:end]), sum(na, dims=2))')
-        omat[nn+1:nn+3, 1:ncols] .= vcat(Matrix{Any}(ctotal[:, 2:end])', sum(na, dims=1))
-        omat[nn+1:nn+3, ncols+1] .= [mean(df2[:, sumvar]), std(df2[:, sumvar]), sum(na)]
     end
+    omat[nrows+1, ncols+1] = tuple(mean_and_std(mm2[:, 3])..., size(mm2, 1))
 
     # value labels and "Total"
-    rownames = vcat(string.(rcvals[1]), "Total")
-    rownames = vcat([[x, " ", " "] for x in rownames]...)
+    rownames = string.(vcat(vv1, "Total"))
+    # rownames = vcat([[x, " ", " "] for x in rownames]...)
 
     # colunm names
-    colnames = vcat(string.(rcvals[2]), "Total")
+    colnames = string.(vcat(vv2, "Total"))
+
+    # covert omat to string values
+    fmt = Printf.Format("%.$(digits)f")
+    for i in 1:nrows+1
+        for j in 1:ncols+1
+            t = omat[i, j]
+            omat[i, j] = string(isnan(t[1]) ? "." : Printf.format(fmt, t[1]), "\n",
+                isnan(t[2]) ? "." : Printf.format(fmt, t[2]), "\n",
+                t[3])
+        end
+    end
 
     # output
     pretty_table(omat,
+        linebreaks=true,
         row_labels=rownames,
-        row_label_column_title=string(var1, " / ", var2),
+        row_label_column_title=varnames == nothing ? "" : varnames,
         header=colnames,
         crop=:none,
-        formatters=(v, i, _) -> (ismissing(v) || isnan(v)) ? @sprintf(".") : (i % 3 in (1, 2) ? @sprintf("%.3f", v) : @sprintf("%.0f", v)),
         max_num_of_rows=maxrows,
         max_num_of_columns=maxcols,
-        hlines=vcat([0, 1], [x * 3 + 1 for x in 1:(nrows+1)]),
+        hlines=vcat([0, 1], [x + 1 for x in 1:(nrows+1)]),
         vlines=[1])
 end
 
