@@ -68,7 +68,7 @@ function tab(indf,var1::Union{Symbol,String}, var2::Union{Symbol,String}; pct=:r
         Tables.getcolumn(indf,summarize); 
         maxrows=-1, 
         maxcols=20,
-        varnames = string(var1," \ ", var2),
+        varnames = string(var1," \\ ", var2),
         digits=digits)
 end
 function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3::Union{Symbol,String};
@@ -102,7 +102,7 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
             _tab2summarize(Tables.getcolumn(subdf,var1), 
                 Tables.getcolumn(subdf,var2), 
                 Tables.getcolumn(subdf,summarize); maxrows=-1, maxcols=20, 
-                digits=digits, varnames = string(var1," \ ",var2))
+                digits=digits, varnames = string(var1," \\ ",var2))
         end
     end
 end
