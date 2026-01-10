@@ -68,7 +68,7 @@ function tab(indf,var1::Union{Symbol,String}, var2::Union{Symbol,String}; pct=:r
         Tables.getcolumn(indf,summarize); 
         maxrows=-1, 
         maxcols=20,
-        varnames = string(var1," \\ ", var2),
+        varnames = string(var1," / ", var2),
         digits=digits)
 end
 function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3::Union{Symbol,String};
@@ -102,7 +102,7 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
             _tab2summarize(Tables.getcolumn(subdf,var1), 
                 Tables.getcolumn(subdf,var2), 
                 Tables.getcolumn(subdf,summarize); maxrows=-1, maxcols=20, 
-                digits=digits, varnames = string(var1," \\ ", var2)
+                digits=digits, varnames = string(var1," / ", var2)
         end
     end
 end
@@ -207,7 +207,7 @@ function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce, digits = 2)
 
     pretty_table(d,
         row_labels=rownames2,
-        row_label_column_title=string(na.dimnames[1], " \\ ", na.dimnames[2]),
+        row_label_column_title=string(na.dimnames[1], " / ", na.dimnames[2]),
         header=colnames,
         crop=:none,
         formatters=(v, i, _) -> (cnt == 1 || i % cnt == 1) ? @sprintf("%.0f", v) : Printf.format(fmt,v),
@@ -335,7 +335,7 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     pretty_table(omat,
         linebreaks=true,
         row_labels=rownames,
-        row_label_column_title=varnames == nothing ? "" : varnames,
+        row_label_column_title = varnames == nothing ? "" : varnames,
         header=colnames,
         crop=:none,
         max_num_of_rows=maxrows,
