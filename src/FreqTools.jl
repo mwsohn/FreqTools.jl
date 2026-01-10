@@ -7,7 +7,7 @@ module FreqTools
 ################################################################################
 
 using DataFrames, NamedArrays, Printf, PrettyTables,
-    Reexport, Statistics, HypothesisTests, StatsAPI
+    Reexport, Statistics, HypothesisTests, StatsAPI, Tables
 
 @reexport using FreqTables
 
