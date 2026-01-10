@@ -26,7 +26,7 @@ PrettyTables = "2.0,3.0"
 TableMetadataTools = "0.1"
 Reexport = "1.0"
 StatsAPI = "1.0"
-HypothesisTests = "0.7,0.8.0.9,0.10,0.11"
+HypothesisTests = "^0.7"
 Tables = "1"
 
 [extras]
