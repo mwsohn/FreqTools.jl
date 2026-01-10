@@ -324,9 +324,11 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     for i in 1:nrows+1
         for j in 1:ncols+1
             t = omat[i, j]
-            omat[i, j] = string(isnan(t[1]) ? "." : Printf.format(fmt, t[1]), "\n",
-                isnan(t[2]) ? "." : Printf.format(fmt, t[2]), "\n",
-                t[3])
+            if ismissing(t)
+                omat[i, j] = string(".\n.\n0")
+            else
+                omat[i, j] = string(isnan(t[1]) ? "." : Printf.format(fmt, t[1]), "\n", isnan(t[2]) ? "." : Printf.format(fmt, t[2]), "\n", ismissing(t[3]) ? "0" : t[3])
+            end
         end
     end
 
