@@ -232,27 +232,27 @@ end
 
 function _tab1summarize(var, sumvar; skipmissing=false, digits = 2, varname = nothing)
 
-    if skipmissing == false
-        m = .!(ismissing.(var) .| ismissing.(sumvar))
+    df = DataFrame(t=var, s=sumvar)
+    if skipmissing
+        ba = completecases(df)
     else
-        m = .!ismissing.(sumvar)
+        ba = completecases(df[:, [:s]])
     end
-    var2 = var[m]
-    sumvar2 = sumvar[m]
+    df = df[ba, :]
 
-    by = sort(unique(var2))
+    by = sort(unique(df[:, :t]))
     len = size(by, 1)
 
     omat = Matrix{Float64}(undef, len + 1, 3)
-    @inbounds for (i, v) in enumerate(by)
-        if ismissing(v)
-            inc = [ismissing(x) ? true : false for x in var2]
+    @inbounds for subdf in groupby(df, :t, sort=true)
+        i = findfirst(x -> x == subdf[1, :t], by)
+        if size(subdf, 1) == 0 || subdf == nothing
+            omat[i, 1:3] .= (0, NaN, NaN)
         else
-            inc = [x == v ? true : false for x in var2]
+            omat[i, 1:3] .= (size(subdf, 1), mean(subdf[:, :s]), std(subdf[:, :s]))
         end
-        omat[i, 1:3] .= (sum(inc), mean(sumvar2[inc]), std(sumvar2[inc]))
     end
-    omat[len+1, 1:3] .= (length(var2), mean(sumvar2), std(sumvar2))
+    omat[len+1, 1:3] .= (size(df, 1), mean(df[:, :s]), std(df[:, :s]))
 
     fmt = Printf.Format("%.$(digits)f")
     pretty_table(omat,
