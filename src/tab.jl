@@ -230,7 +230,7 @@ function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce, digits = 2)
     end
 end
 
-function _tab1summarize(indf, var, sumvar; skipmissing=false, digits = 2, varname = nothing)
+function _tab1summarize(var, sumvar; skipmissing=false, digits = 2, varname = nothing)
 
     if skipmissing == false
         m = .!(ismissing.(var) .| ismissing.(sumvar))
