@@ -250,9 +250,9 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits = 2, varname = no
         else
             inc = [x == v ? true : false for x in var2]
         end
-        omat[i, 1:3] .= (sum(inc), mean_and_std(sumvar2[inc])...)
+        omat[i, 1:3] .= (sum(inc), mean(sumvar2[inc]), std(sumvar2[inc]))
     end
-    omat[len+1, 1:3] .= (length(var2), mean_and_std(sumvar2)...)
+    omat[len+1, 1:3] .= (length(var2), mean(sumvar2), std(sumvar2))
 
     fmt = Printf.Format("%.$(digits)f")
     pretty_table(omat,
