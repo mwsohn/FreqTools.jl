@@ -98,7 +98,7 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
         for v in n3
             println("\n\n", var3, " = ", v, "\n")
 
-            subdf = filter(x -> x[var3] == v, indf),
+            subdf = filter(x -> x[var3] == v, indf)
             _tab2summarize(Tables.getcolumn(subdf,var1), 
                 Tables.getcolumn(subdf,var2), 
                 Tables.getcolumn(subdf,summarize); maxrows=-1, maxcols=20, 
