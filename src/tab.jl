@@ -144,7 +144,6 @@ function _tab1(na::NamedArray; sort=false, digits=2)
     ar = hcat(counts, percents, cumpct)
 
     fmt = Printf.Format("%.$(digits)f")
-
     PrettyTables.pretty_table(ar,
         row_labels = rownames,
         row_label_column_title=string(na.dimnames[1]),
