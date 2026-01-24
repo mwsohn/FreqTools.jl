@@ -22,11 +22,11 @@ where `r` indicates "row" percents, `c` "column" percents, and `e` "cell" percen
 
 If input is a matrix of counts, a Pearson chi-square test will be performed. 
 """
-function tab(na::NamedArray; skipmissing=true, pct=:rce, digits=2)
+function tab(na::NamedArray; skipmissing=true, pct=:rce, sort = false, digits=2)
 
     len = length(na.dimnames)
     if len == 1
-        _tab1(na; skipmissing=skipmissing, digits=digits)
+        _tab1(na; skipmissing=skipmissing, sort = sort, digits=digits)
     elseif len == 2
         _tab2(na; skipmissing=skipmissing, pct=pct)
     elseif len == 3
@@ -41,7 +41,7 @@ function tab(indf, var::Union{Symbol,String}; skipmissing=true, sort=false, summ
         return nothing
     end
     if summarize != nothing
-        return _tab1summarize(Tables.getcolumn(indf, var), Tables.getcolumn(indf, summarize), skipmissing=skipmissing, digits = digits, varname=string(var))
+        return _tab1summarize(Tables.getcolumn(indf, var), Tables.getcolumn(indf, summarize), skipmissing=skipmissing, digits = digits, sort = sort, varname=string(var))
     end
     _tab1(freqtable(indf, var, skipmissing=skipmissing); sort=sort, digits=digits)
 end
@@ -142,43 +142,6 @@ function _tab1(na::NamedArray; sort=false, digits=2)
     omat = hcat(counts, percents, cumpct)
 
     return TAB1OUT(omat, rownames, string(dimnames(na)[1]), digits)
-
-    # # do not output rows with zeros
-    # z = findall(x -> x != 0, na.array)
-    # arry = na.array[z]
-
-    # if sort
-    #     s = sortperm(arry, rev=true)
-    #     arry = arry[s]
-    # end
-
-    # # value labels and "Total"
-    # if sort
-    #     rownames = vcat(names(na)[1][z][s], "Total")
-    # else
-    #     rownames = vcat(names(na)[1][z], "Total")
-    # end
-
-    # # counts - the last row has the total
-    # counts = vcat(arry, sum(na, dims=1))
-
-    # # percents
-    # percents = 100 .* counts ./ counts[end]
-
-    # # cumulative percents
-    # cumpct = 100 .* vcat(cumsum(arry, dims=1), counts[end]) ./ counts[end]
-
-    # ar = hcat(counts, percents, cumpct)
-
-    # fmt = Printf.Format("%.$(digits)f")
-    # PrettyTables.pretty_table(ar,
-    #     row_labels = rownames,
-    #     row_label_column_title=string(na.dimnames[1]),
-    #     header=["Counts", " Percent", "Cum Pct"],
-    #     formatters= (v,i,j) -> j in (2,3) ? Printf.format(fmt,v) : @sprintf("%.0d", v), 
-    #     crop=:none,
-    #     hlines=[0, 1, length(rownames), length(rownames) + 1],
-    #     vlines=[1])
 end
 struct TAB1OUT
     omat::Matrix
@@ -199,7 +162,7 @@ function Base.show(io::IO, m::TAB1OUT)
         vlines=[1])
 end
 
-function _tab1summarize(var, sumvar; skipmissing=false, digits=2, order = false, varname=nothing)
+function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, varname=nothing)
 
     df = DataFrame(t=var, s=sumvar)
     if skipmissing
@@ -222,7 +185,7 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits=2, order = false,
     omat[len+1, 1:3] .= (size(df, 1), mean(df[:, :s]), std(df[:, :s]))
 
     push!(rownames, "Total")
-    if order == true
+    if sort == true
         p = sortperm(omat[:, 1], rev=true)
         push!(p, popfirst!(p))
         omat = omat[p, :]
@@ -230,37 +193,6 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits=2, order = false,
     end
 
     return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits)
-    # df = DataFrame(t=var, s=sumvar)
-    # if skipmissing
-    #     ba = completecases(df)
-    # else
-    #     ba = completecases(df[:, [:s]])
-    # end
-    # df = df[ba, :]
-
-    # by = sort(unique(df[:, :t]))
-    # len = size(by, 1)
-
-    # omat = Matrix{Float64}(undef, len + 1, 3)
-    # @inbounds for subdf in groupby(df, :t, sort=true)
-    #     i = findfirst(x -> x == subdf[1, :t], by)
-    #     if size(subdf, 1) == 0 || subdf == nothing
-    #         omat[i, 1:3] .= (0, NaN, NaN)
-    #     else
-    #         omat[i, 1:3] .= (size(subdf, 1), mean(subdf[:, :s]), std(subdf[:, :s]))
-    #     end
-    # end
-    # omat[len+1, 1:3] .= (size(df, 1), mean(df[:, :s]), std(df[:, :s]))
-
-    # fmt = Printf.Format("%.$(digits)f")
-    # pretty_table(omat,
-    #     row_labels=string.(vcat(by, "Total")),
-    #     row_label_column_title=varname == nothing ? "" : varname,
-    #     formatters=(v, _, j) -> isnan(v) ? "." : (j % 3 != 1 ? Printf.format(fmt, v) : @sprintf("%.0f", v)),
-    #     header=["N", "Mean", "SD"],
-    #     crop=:none,
-    #     hlines=vcat([0, 1], len + 1, len + 2),
-    #     vlines=[1])
 end
 struct TAB1OUT2
     omat::Matrix
