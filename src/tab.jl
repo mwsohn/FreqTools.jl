@@ -199,7 +199,7 @@ function Base.show(io::IO, m::TAB1OUT)
         vlines=[1])
 end
 
-function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, varname=nothing)
+function _tab1summarize(var, sumvar; skipmissing=false, digits=2, order = false, varname=nothing)
 
     df = DataFrame(t=var, s=sumvar)
     if skipmissing
@@ -222,7 +222,7 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, 
     omat[len+1, 1:3] .= (size(df, 1), mean(df[:, :s]), std(df[:, :s]))
 
     push!(rownames, "Total")
-    if sort == true
+    if order == true
         p = sortperm(omat[:, 1], rev=true)
         push!(p, popfirst!(p))
         omat = omat[p, :]
