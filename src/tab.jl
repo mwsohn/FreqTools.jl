@@ -294,26 +294,26 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     # let's implement this using groupby
     for subdf in groupby(df, [:t1, :t2], sort=true)
         (i,j) = idx[(subdf[1,:t1], subdf[1,:t2])]
-        if size(subdf, 1) == 0
-            omat[i, j] = (NaN, NaN, 0)
-        else
+        # if size(subdf, 1) == 0
+        #     omat[i, j] = (NaN, NaN, 0)
+        # else
             omat[i, j] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
-        end
+        # end
     end
 
     for (i,subdf) in enumerate(groupby(df, :t1, sort=true))
-        if size(subdf, 1) == 0
-            omat[i, ncols+1] = (NaN, NaN, 0)
-        else
+        # if size(subdf, 1) == 0
+        #     omat[i, ncols+1] = (NaN, NaN, 0)
+        # else
             omat[i, ncols+1] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
-        end
+        # end
     end
     for (j,subdf) in enumerate(groupby(df, :t2, sort=true))
-        if size(subdf, 1) == 0
-            omat[nrows+1, j] = (NaN, NaN, 0)
-        else
+        # if size(subdf, 1) == 0
+        #     omat[nrows+1, j] = (NaN, NaN, 0)
+        # else
             omat[nrows+1, j] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
-        end
+        # end
     end
     omat[nrows+1, ncols+1] = (mean(df[:, :tsumvar]), std(df[:, :tsumvar]), size(df, 1))
 
