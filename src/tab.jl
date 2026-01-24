@@ -304,7 +304,7 @@ function Base.show(io::IO, m::TAB2OUT)
 
     if m.tests == true
         (i, j) = size(m.omat)
-        testarray = map(x -> x[1], om.omat)[1:i-1, 1:j-1]
+        testarray = map(x -> x[1], m.omat)[1:i-1, 1:j-1]
         if size(testarray, 1) > 1 && size(testarray, 2) > 1
             c = ChisqTest(testarray)
             pval = pvalue(c)
