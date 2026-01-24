@@ -116,20 +116,18 @@ end
 
 function _tab1(na::NamedArray; sort=false, digits=2)
 
-    # do not output rows with zeros
-    z = findall(x -> x != 0, na.array)
-    arry = na.array[z]
-
     if sort
-        s = sortperm(arry, rev=true)
-        arry = arry[s]
+        s = sortperm(na, rev=true)
+        arry = na[s]
+    else
+        arry = na.array
     end
 
     # value labels and "Total"
     if sort
-        rownames = vcat(names(na)[1][z][s], "Total")
+        rownames = vcat(string.(names(na)[1][s]), "Total")
     else
-        rownames = vcat(names(na)[1][z], "Total")
+        rownames = vcat(string.(names(na)[1]), "Total")
     end
 
     # counts - the last row has the total
@@ -141,16 +139,148 @@ function _tab1(na::NamedArray; sort=false, digits=2)
     # cumulative percents
     cumpct = 100 .* vcat(cumsum(arry, dims=1), counts[end]) ./ counts[end]
 
-    ar = hcat(counts, percents, cumpct)
+    omat = hcat(counts, percents, cumpct)
 
-    fmt = Printf.Format("%.$(digits)f")
-    PrettyTables.pretty_table(ar,
-        row_labels = rownames,
-        row_label_column_title=string(na.dimnames[1]),
+    return TAB1OUT(omat, rownames, string(dimnames(na)[1]), digits)
+
+    # # do not output rows with zeros
+    # z = findall(x -> x != 0, na.array)
+    # arry = na.array[z]
+
+    # if sort
+    #     s = sortperm(arry, rev=true)
+    #     arry = arry[s]
+    # end
+
+    # # value labels and "Total"
+    # if sort
+    #     rownames = vcat(names(na)[1][z][s], "Total")
+    # else
+    #     rownames = vcat(names(na)[1][z], "Total")
+    # end
+
+    # # counts - the last row has the total
+    # counts = vcat(arry, sum(na, dims=1))
+
+    # # percents
+    # percents = 100 .* counts ./ counts[end]
+
+    # # cumulative percents
+    # cumpct = 100 .* vcat(cumsum(arry, dims=1), counts[end]) ./ counts[end]
+
+    # ar = hcat(counts, percents, cumpct)
+
+    # fmt = Printf.Format("%.$(digits)f")
+    # PrettyTables.pretty_table(ar,
+    #     row_labels = rownames,
+    #     row_label_column_title=string(na.dimnames[1]),
+    #     header=["Counts", " Percent", "Cum Pct"],
+    #     formatters= (v,i,j) -> j in (2,3) ? Printf.format(fmt,v) : @sprintf("%.0d", v), 
+    #     crop=:none,
+    #     hlines=[0, 1, length(rownames), length(rownames) + 1],
+    #     vlines=[1])
+end
+struct TAB1OUT
+    omat::Matrix
+    rownames::Vector{String}
+    varname::String
+    digits::Int8
+end
+
+function Base.show(io::IO, m::TAB1OUT)
+    fmt = Printf.Format("%.$(m.digits)f")
+    PrettyTables.pretty_table(io, m.omat,
+        row_labels=m.rownames,
+        row_label_column_title=string(m.varname),
         header=["Counts", " Percent", "Cum Pct"],
-        formatters= (v,i,j) -> j in (2,3) ? Printf.format(fmt,v) : @sprintf("%.0d", v), 
+        formatters=(v, i, j) -> j in (2, 3) ? Printf.format(fmt, v) : @sprintf("%.0d", v),
         crop=:none,
-        hlines=[0, 1, length(rownames), length(rownames) + 1],
+        hlines=[0, 1, length(m.rownames), length(m.rownames) + 1],
+        vlines=[1])
+end
+
+function _tab1summarize(var, sumvar; skipmissing=false, digits=2, varname=nothing)
+
+    df = DataFrame(t=var, s=sumvar)
+    if skipmissing
+        df = dropmissing(df)
+    else
+        df = df[completecases(df[:, [:s]]), :]
+    end
+
+    len = length(unique(df[:, :t]))
+    omat = Matrix{Any}(missing, len + 1, 3)
+    rownames = []
+    @inbounds for (i, subdf) in enumerate(groupby(df, :t, sort=true))
+        push!(rownames, subdf[1, :t])
+        if size(subdf, 1) == 0 || subdf == nothing
+            omat[i, 1:3] .= (0, NaN, NaN)
+        else
+            omat[i, 1:3] .= (size(subdf, 1), mean(subdf[:, :s]), std(subdf[:, :s]))
+        end
+    end
+    omat[len+1, 1:3] .= (size(df, 1), mean(df[:, :s]), std(df[:, :s]))
+
+    push!(rownames, "Total")
+    if sort == true
+        p = sortperm(omat[:, 1], rev=true)
+        push!(p, popfirst!(p))
+        omat = omat[p, :]
+        rownames = rownames[p]
+    end
+
+    return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits)
+    # df = DataFrame(t=var, s=sumvar)
+    # if skipmissing
+    #     ba = completecases(df)
+    # else
+    #     ba = completecases(df[:, [:s]])
+    # end
+    # df = df[ba, :]
+
+    # by = sort(unique(df[:, :t]))
+    # len = size(by, 1)
+
+    # omat = Matrix{Float64}(undef, len + 1, 3)
+    # @inbounds for subdf in groupby(df, :t, sort=true)
+    #     i = findfirst(x -> x == subdf[1, :t], by)
+    #     if size(subdf, 1) == 0 || subdf == nothing
+    #         omat[i, 1:3] .= (0, NaN, NaN)
+    #     else
+    #         omat[i, 1:3] .= (size(subdf, 1), mean(subdf[:, :s]), std(subdf[:, :s]))
+    #     end
+    # end
+    # omat[len+1, 1:3] .= (size(df, 1), mean(df[:, :s]), std(df[:, :s]))
+
+    # fmt = Printf.Format("%.$(digits)f")
+    # pretty_table(omat,
+    #     row_labels=string.(vcat(by, "Total")),
+    #     row_label_column_title=varname == nothing ? "" : varname,
+    #     formatters=(v, _, j) -> isnan(v) ? "." : (j % 3 != 1 ? Printf.format(fmt, v) : @sprintf("%.0f", v)),
+    #     header=["N", "Mean", "SD"],
+    #     crop=:none,
+    #     hlines=vcat([0, 1], len + 1, len + 2),
+    #     vlines=[1])
+end
+struct TAB1OUT2
+    omat::Matrix
+    rownames::Vector{String}
+    colnames::Vector{String}
+    varname::String
+    digits::Int8
+end
+function Base.show(io::IO, m::TAB1OUT2)
+    fmt = Printf.Format("%.$(m.digits)f")
+    len = size(m.omat, 1)
+
+    pretty_table(io,
+        m.omat,
+        row_labels=m.rownames,
+        row_label_column_title=m.varname,
+        formatters=(v, _, j) -> isnan(v) ? "." : (j % 3 != 1 ? Printf.format(fmt, v) : string(v)),
+        header=m.colnames,
+        crop=:none,
+        hlines=vcat([0, 1], len, len + 1),
         vlines=[1])
 end
 
@@ -193,40 +323,6 @@ function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce, digits = 2, tes
     return TAB2OUT(d, rownames, colnames, string(join(dimnames(na), " ╲ ")), maxrows, maxcols, digits, tests)
 end
 
-function _tab1summarize(var, sumvar; skipmissing=false, digits = 2, varname = nothing)
-
-    df = DataFrame(t=var, s=sumvar)
-    if skipmissing
-        ba = completecases(df)
-    else
-        ba = completecases(df[:, [:s]])
-    end
-    df = df[ba, :]
-
-    by = sort(unique(df[:, :t]))
-    len = size(by, 1)
-
-    omat = Matrix{Float64}(undef, len + 1, 3)
-    @inbounds for subdf in groupby(df, :t, sort=true)
-        i = findfirst(x -> x == subdf[1, :t], by)
-        if size(subdf, 1) == 0 || subdf == nothing
-            omat[i, 1:3] .= (0, NaN, NaN)
-        else
-            omat[i, 1:3] .= (size(subdf, 1), mean(subdf[:, :s]), std(subdf[:, :s]))
-        end
-    end
-    omat[len+1, 1:3] .= (size(df, 1), mean(df[:, :s]), std(df[:, :s]))
-
-    fmt = Printf.Format("%.$(digits)f")
-    pretty_table(omat,
-        row_labels=string.(vcat(by, "Total")),
-        row_label_column_title=varname == nothing ? "" : varname,
-        formatters=(v, _, j) -> isnan(v) ? "." : (j % 3 != 1 ? Printf.format(fmt, v) : @sprintf("%.0f", v)),
-        header=["N", "Mean", "StDev"],
-        crop=:none,
-        hlines=vcat([0, 1], len + 1, len + 2),
-        vlines=[1])
-end
 
 function idxdict(vv1,vv2)
     dd = Dict()
