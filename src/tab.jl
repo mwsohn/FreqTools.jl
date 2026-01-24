@@ -264,18 +264,103 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits = 2, varname = no
         vlines=[1])
 end
 
+# function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=nothing, varnames = nothing, digits=2)
+
+#     df = DataFrame(t1=var1, t2=var2, tsumvar=sumvar)
+#     if skipmissing == true
+#         ba = completecases(df)
+#     else
+#         ba = completecases(df[:, [:tsumvar]])
+#     end
+#     df = df[ba, :]
+
+#     vv1 = sort(unique(df[:, :t1]))
+#     vv2 = sort(unique(df[:, :t2]))
+#     nrows = length(vv1)
+#     ncols = length(vv2)
+
+#     # allocate memory for output matrix
+#     omat = Matrix{Union{Missing,Any}}(missing, nrows + 1, ncols + 1)
+
+#     # let's implement this using groupby
+#     for subdf in groupby(df, [:t1, :t2], sort=true)
+#         i = findfirst(x -> x == subdf[1, :t1], vv1)
+#         j = findfirst(x -> x == subdf[1, :t2], vv2)
+#         if size(subdf, 1) == 0
+#             omat[i, j] = tuple(NaN, NaN, 0)
+#         else
+#             omat[i, j] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
+#         end
+#     end
+
+#     for subdf in groupby(df, :t1, sort=true)
+#         i = findfirst(x -> x == subdf[1, :t1], vv1)
+#         if size(subdf, 1) == 0
+#             omat[i, ncols+1] = tuple(NaN, NaN, 0)
+#         else
+#             omat[i, ncols+1] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
+#         end
+#     end
+#     for subdf in groupby(df, :t2, sort=true)
+#         j = findfirst(x -> x == subdf[1, :t2], vv2)
+#         if size(subdf, 1) == 0
+#             omat[nrows+1, j] = tuple(NaN, NaN, 0)
+#         else
+#             omat[nrows+1, j] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
+#         end
+#     end
+#     omat[nrows+1, ncols+1] = tuple(mean(df[:, :tsumvar]), std(df[:, :tsumvar]), size(df, 1))
+
+#     # value labels and "Total"
+#     rownames = string.(vcat(vv1, "Total"))
+
+#     # colunm names
+#     colnames = string.(vcat(vv2, "Total"))
+
+#     # covert omat to string values
+#     fmt = Printf.Format("%.$(digits)f")
+#     for i in 1:nrows+1
+#         for j in 1:ncols+1
+#             t = omat[i, j]
+#             if ismissing(t)
+#                 omat[i, j] = string(".\n.\n0")
+#             else
+#                 omat[i, j] = string(isnan(t[1]) ? "." : Printf.format(fmt, t[1]), "\n", isnan(t[2]) ? "." : Printf.format(fmt, t[2]), "\n", ismissing(t[3]) ? "0" : t[3])
+#             end
+#         end
+#     end
+
+#     # output
+#     pretty_table(omat,
+#         linebreaks=true,
+#         row_labels=rownames,
+#         row_label_column_title = varnames == nothing ? "" : varnames,
+#         header=colnames,
+#         crop=:none,
+#         max_num_of_rows=maxrows,
+#         max_num_of_columns=maxcols,
+#         hlines=vcat([0, 1], [x + 1 for x in 1:(nrows+1)]),
+#         vlines=[1])
+# end
+
 function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=nothing, varnames = nothing, digits=2)
 
-    df = DataFrame(t1=var1, t2=var2, tsumvar=sumvar)
     if skipmissing == true
-        ba = completecases(df)
+        df = dropmissing(DataFrame(t1=var1, t2=var2, tsumvar=sumvar))
     else
-        ba = completecases(df[:, [:tsumvar]])
+        df = DataFrame(t1=var1, t2=var2, tsumvar=sumvar)[.!ismissing.(sumvar),:]
     end
-    df = df[ba, :]
 
     vv1 = sort(unique(df[:, :t1]))
+    idx1 = Dict(vv1 .=> collect(1:length(vv1)))
     vv2 = sort(unique(df[:, :t2]))
+    idx1 = Dict(vv2 .=> collect(1:length(vv2)))
+    idx = Dict()
+    for (i, v1) in enumerate(vv1)
+        for (j, v2) in enumerate(vv2)
+            idx[(v1, v2)] = (i, j)
+        end
+    end
     nrows = length(vv1)
     ncols = length(vv2)
 
@@ -284,8 +369,7 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
 
     # let's implement this using groupby
     for subdf in groupby(df, [:t1, :t2], sort=true)
-        i = findfirst(x -> x == subdf[1, :t1], vv1)
-        j = findfirst(x -> x == subdf[1, :t2], vv2)
+        (i,j) = idx[(subdf[1,:t1], subdf[1,:t2])]
         if size(subdf, 1) == 0
             omat[i, j] = tuple(NaN, NaN, 0)
         else
@@ -294,7 +378,7 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     end
 
     for subdf in groupby(df, :t1, sort=true)
-        i = findfirst(x -> x == subdf[1, :t1], vv1)
+        i = idx1[subdf[1,:t1]]
         if size(subdf, 1) == 0
             omat[i, ncols+1] = tuple(NaN, NaN, 0)
         else
@@ -302,7 +386,7 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
         end
     end
     for subdf in groupby(df, :t2, sort=true)
-        j = findfirst(x -> x == subdf[1, :t2], vv2)
+        j = idx1[subdf[1, :t2]]
         if size(subdf, 1) == 0
             omat[nrows+1, j] = tuple(NaN, NaN, 0)
         else
@@ -318,29 +402,57 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     # colunm names
     colnames = string.(vcat(vv2, "Total"))
 
+    return TAB2OUT(omat, rownames, colnames, varnames == nothing ? "" : varnames, maxrows, maxcols, digits)
+end
+
+struct TAB2OUT
+    omat::Matrix
+    rownames::Vector{String}
+    colnames::Vector{String}
+    varnames::String
+    maxrows::Int64
+    maxcols::Int64
+    digits::Int8
+end
+
+function Base.show(io::IO, m::TAB2OUT)
+    pretty_table(io, 
+        _tab2matstr(m),
+        linebreaks=true,
+        row_labels=m.rownames,
+        row_label_column_title= m.varnames,
+        header= m.colnames,
+        crop=:none,
+        max_num_of_rows= m.maxrows,
+        max_num_of_columns= m.maxcols,
+        hlines=vcat([0, 1], [x + 1 for x in 1:length(m.rownames)]),
+        vlines=[1])
+end
+function _tab2matstr(m)
     # covert omat to string values
-    fmt = Printf.Format("%.$(digits)f")
-    for i in 1:nrows+1
-        for j in 1:ncols+1
-            t = omat[i, j]
+    fmt = Printf.Format("%.$(m.digits)f")
+    o = copy(m.omat)
+    (nrows,ncols) = size(o)
+
+    # non-missing cell
+    e = o[findfirst(x -> !ismissing(x), o)]
+    etypeint = typeof(e[1]) <: Integer
+    elen = length(e)
+    for i in 1:nrows
+        for j in 1:ncols
+            t = o[i, j]
             if ismissing(t)
-                omat[i, j] = string(".\n.\n0")
+                if etypeint
+                    o[i, j] = string("0",repeat("\n.",elen-1))
+                else
+                    o[i, j] = string(repeat(".\n",elen-1),"0")
+                end
             else
-                omat[i, j] = string(isnan(t[1]) ? "." : Printf.format(fmt, t[1]), "\n", isnan(t[2]) ? "." : Printf.format(fmt, t[2]), "\n", ismissing(t[3]) ? "0" : t[3])
+                tt = [ ismissing(x) ? "." : (typeof(x) <: Integer ? string(x) : Printf.format(fmt,x)) for x in t]
+                o[i,j] = join(tt,"\n")
             end
         end
     end
 
-    # output
-    pretty_table(omat,
-        linebreaks=true,
-        row_labels=rownames,
-        row_label_column_title = varnames == nothing ? "" : varnames,
-        header=colnames,
-        crop=:none,
-        max_num_of_rows=maxrows,
-        max_num_of_columns=maxcols,
-        hlines=vcat([0, 1], [x + 1 for x in 1:(nrows+1)]),
-        vlines=[1])
+    return o
 end
-
