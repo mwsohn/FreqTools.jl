@@ -154,22 +154,17 @@ function _tab1(na::NamedArray; sort=false, digits=2)
         vlines=[1])
 end
 
-function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce, digits = 2)
+function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce, digits = 2, tests=true)
 
     # counts
     counts = na.array
     counts = vcat(counts, sum(counts, dims=1)) # column sum
     counts = hcat(counts, sum(counts, dims=2)) # row sum
-
-    # drop rows or columns whose margin totals == 0
-    rz = findall(x -> x != 0, counts[:, end]) # find all columns with non-zero totals
-    cz = findall(x -> x != 0, counts[end, :]) # find all rows with non-zero totals
-    counts = counts[rz, cz]
     (nrow, ncol) = size(counts)
 
     # row and column labels and "Total"
-    rownames = vcat(names(na)[1], "Total")[rz]
-    colnames = vcat(names(na)[2], "Total")[cz]
+    rownames = vcat(string.(names(na)[1]), "Total")
+    colnames = vcat(string.(names(na)[2]), "Total")
 
     # compute percentages
     if pct == nothing
@@ -177,56 +172,25 @@ function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce, digits = 2)
     else
         pctstr = string(pct)
     end
-    cnt = length(pctstr) + 1
-    d = Matrix{Any}(undef, nrow * cnt, ncol)
+    d = Matrix{Any}(missing, nrow, ncol)
     for i in 1:nrow
-        r = i + (i - 1) * (cnt - 1)
         for j in 1:ncol
-
-            # counts
-            d[r, j] = counts[i, j]
-
-            # percentages
-            for (k, v) in enumerate(pctstr)
-                if v == 'r' # row percents
-                    d[r+k, j] = 100 * counts[i, j] / counts[i, ncol]
-                elseif v == 'c' # column percents
-                    d[r+k, j] = 100 * counts[i, j] / counts[nrow, j]
-                elseif v == 'e' # cell percents
-                    d[r+k, j] = 100 * counts[i, j] / counts[nrow, ncol]
+            vv = []
+            push!(vv, counts[i, j])
+            for c in pctstr
+                if c == 'r' # row percents
+                    push!(vv, 100 * counts[i, j] / counts[i, ncol])
+                elseif c == 'c' # column percents
+                    push!(vv, 100 * counts[i, j] / counts[nrow, j])
+                elseif c == 'e' # cell percents
+                    push!(vv, 100 * counts[i, j] / counts[nrow, ncol])
                 end
             end
+            d[i, j] = vv
         end
     end
 
-    # add blank cells
-    rownames2 = vcat([vcat(x, fill(" ", cnt - 1)) for x in rownames]...)
-
-    fmt = Printf.Format("%.$(digits)f")
-
-    pretty_table(d,
-        row_labels=rownames2,
-        row_label_column_title=string(na.dimnames[1], " ╲ ", na.dimnames[2]),
-        header=colnames,
-        crop=:none,
-        formatters=(v, i, _) -> (cnt == 1 || i % cnt == 1) ? @sprintf("%.0f", v) : Printf.format(fmt,v),
-        max_num_of_rows=maxrows,
-        max_num_of_columns=maxcols,
-        hlines=vcat([0, 1], cnt == 1 ? [nrow,nrow+1] : [x * cnt + 1 for x in 1:(nrow+1)]),
-        vlines=[1])
-
-    testarray = na.array[rz[1:end-1], cz[1:end-1]]
-    if size(testarray, 1) > 1 && size(testarray, 2) > 1
-        c = ChisqTest(testarray)
-        pval = pvalue(c)
-        println("Pearson chi-square = ", @sprintf("%.4f", c.stat), " (", c.df, "), p ",
-            pval < 0.0001 ? "< 0.0001" : string("= ", round(pval, sigdigits=6)))
-    end
-
-    if size(testarray) == (2, 2) && all(x -> x > 0, testarray) # 2x2 array
-        println("Fisher's exact test = ", @sprintf("%.4f",
-            pvalue(HypothesisTests.FisherExactTest((testarray')...))))
-    end
+    return TAB2OUT(d, rownames, colnames, string(join(dimnames(na), " ╲ ")), maxrows, maxcols, digits, tests)
 end
 
 function _tab1summarize(var, sumvar; skipmissing=false, digits = 2, varname = nothing)
@@ -294,26 +258,13 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     # let's implement this using groupby
     for subdf in groupby(df, [:t1, :t2], sort=true)
         (i,j) = idx[(subdf[1,:t1], subdf[1,:t2])]
-        # if size(subdf, 1) == 0
-        #     omat[i, j] = (NaN, NaN, 0)
-        # else
-            omat[i, j] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
-        # end
+        omat[i, j] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
     end
-
     for (i,subdf) in enumerate(groupby(df, :t1, sort=true))
-        # if size(subdf, 1) == 0
-        #     omat[i, ncols+1] = (NaN, NaN, 0)
-        # else
-            omat[i, ncols+1] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
-        # end
+        omat[i, ncols+1] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
     end
     for (j,subdf) in enumerate(groupby(df, :t2, sort=true))
-        # if size(subdf, 1) == 0
-        #     omat[nrows+1, j] = (NaN, NaN, 0)
-        # else
-            omat[nrows+1, j] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
-        # end
+        omat[nrows+1, j] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
     end
     omat[nrows+1, ncols+1] = (mean(df[:, :tsumvar]), std(df[:, :tsumvar]), size(df, 1))
 
@@ -323,7 +274,7 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     # colunm names
     colnames = string.(vcat(vv2, "Total"))
 
-    return TAB2OUT(omat, rownames, colnames, varnames == nothing ? "" : varnames, maxrows, maxcols, digits)
+    return TAB2OUT(omat, rownames, colnames, varnames == nothing ? "" : varnames, maxrows, maxcols, digits, false)
 end
 
 struct TAB2OUT
@@ -334,20 +285,38 @@ struct TAB2OUT
     maxrows::Int64
     maxcols::Int64
     digits::Int8
+    tests::Bool
 end
 
 function Base.show(io::IO, m::TAB2OUT)
-    pretty_table(io, 
+
+    pretty_table(io,
         _tab2matstr(m),
         linebreaks=true,
         row_labels=m.rownames,
-        row_label_column_title= m.varnames,
-        header= m.colnames,
+        row_label_column_title=m.varnames,
+        header=m.colnames,
         crop=:none,
-        max_num_of_rows= m.maxrows,
-        max_num_of_columns= m.maxcols,
+        max_num_of_rows=m.maxrows,
+        max_num_of_columns=m.maxcols,
         hlines=vcat([0, 1], [x + 1 for x in 1:length(m.rownames)]),
         vlines=[1])
+
+    if m.tests == true
+        (i, j) = size(m.omat)
+        testarray = map(x -> x[1], om.omat)[1:i-1, 1:j-1]
+        if size(testarray, 1) > 1 && size(testarray, 2) > 1
+            c = ChisqTest(testarray)
+            pval = pvalue(c)
+            println(io, "Pearson chi-square = ", @sprintf("%.4f", c.stat), " (", c.df, "), p ",
+                pval < 0.0001 ? "< 0.0001" : string("= ", round(pval, sigdigits=6)))
+        end
+
+        if size(testarray) == (2, 2) && all(x -> x > 0, testarray) # 2x2 array
+            println(io, "Fisher's exact test = ", @sprintf("%.4f",
+                pvalue(HypothesisTests.FisherExactTest((testarray')...))))
+        end
+    end
 end
 function _tab2matstr(m)
     # covert omat to string values
