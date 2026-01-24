@@ -199,7 +199,7 @@ function Base.show(io::IO, m::TAB1OUT)
         vlines=[1])
 end
 
-function _tab1summarize(var, sumvar; skipmissing=false, digits=2, varname=nothing)
+function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, varname=nothing)
 
     df = DataFrame(t=var, s=sumvar)
     if skipmissing
