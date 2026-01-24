@@ -273,9 +273,9 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     end
 
     vv1 = sort(unique(df[:, :t1]))
-    idx1 = Dict(vv1 .=> collect(1:length(vv1)))
+    # idx1 = Dict(vv1 .=> collect(1:length(vv1)))
     vv2 = sort(unique(df[:, :t2]))
-    idx1 = Dict(vv2 .=> collect(1:length(vv2)))
+    # idx1 = Dict(vv2 .=> collect(1:length(vv2)))
     idx = Dict()
     for (i, v1) in enumerate(vv1)
         for (j, v2) in enumerate(vv2)
@@ -298,16 +298,16 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
         end
     end
 
-    for subdf in groupby(df, :t1, sort=true)
-        i = idx1[subdf[1,:t1]]
+    for (i,subdf) in enumerate(groupby(df, :t1, sort=true))
+        # i = idx1[subdf[1,:t1]]
         if size(subdf, 1) == 0
             omat[i, ncols+1] = tuple(NaN, NaN, 0)
         else
             omat[i, ncols+1] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
         end
     end
-    for subdf in groupby(df, :t2, sort=true)
-        j = idx1[subdf[1, :t2]]
+    for (j,subdf) in enumerate(groupby(df, :t2, sort=true))
+        # j = idx1[subdf[1, :t2]]
         if size(subdf, 1) == 0
             omat[nrows+1, j] = tuple(NaN, NaN, 0)
         else
