@@ -264,6 +264,16 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits = 2, varname = no
         vlines=[1])
 end
 
+function idxdict(vv1,vv2)
+    dd = Dict()
+    for (i, v1) in enumerate(vv1)
+        for (j, v2) in enumerate(vv2)
+            dd[(v1, v2)] = (i, j)
+        end
+    end
+    return dd
+end
+
 function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=nothing, varnames = nothing, digits=2)
 
     if skipmissing == true
@@ -273,15 +283,8 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     end
 
     vv1 = sort(unique(df[:, :t1]))
-    # idx1 = Dict(vv1 .=> collect(1:length(vv1)))
     vv2 = sort(unique(df[:, :t2]))
-    # idx1 = Dict(vv2 .=> collect(1:length(vv2)))
-    idx = Dict()
-    for (i, v1) in enumerate(vv1)
-        for (j, v2) in enumerate(vv2)
-            idx[(v1, v2)] = (i, j)
-        end
-    end
+    idx = idxdict(vv1,vv2)
     nrows = length(vv1)
     ncols = length(vv2)
 
@@ -292,33 +295,30 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     for subdf in groupby(df, [:t1, :t2], sort=true)
         (i,j) = idx[(subdf[1,:t1], subdf[1,:t2])]
         if size(subdf, 1) == 0
-            omat[i, j] = tuple(NaN, NaN, 0)
+            omat[i, j] = (NaN, NaN, 0)
         else
-            omat[i, j] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
+            omat[i, j] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
         end
     end
 
     for (i,subdf) in enumerate(groupby(df, :t1, sort=true))
-        # i = idx1[subdf[1,:t1]]
         if size(subdf, 1) == 0
-            omat[i, ncols+1] = tuple(NaN, NaN, 0)
+            omat[i, ncols+1] = (NaN, NaN, 0)
         else
-            omat[i, ncols+1] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
+            omat[i, ncols+1] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
         end
     end
     for (j,subdf) in enumerate(groupby(df, :t2, sort=true))
-        # j = idx1[subdf[1, :t2]]
         if size(subdf, 1) == 0
-            omat[nrows+1, j] = tuple(NaN, NaN, 0)
+            omat[nrows+1, j] = (NaN, NaN, 0)
         else
-            omat[nrows+1, j] = tuple(mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
+            omat[nrows+1, j] = (mean(subdf[:, :tsumvar]), std(subdf[:, :tsumvar]), size(subdf, 1))
         end
     end
-    omat[nrows+1, ncols+1] = tuple(mean(df[:, :tsumvar]), std(df[:, :tsumvar]), size(df, 1))
+    omat[nrows+1, ncols+1] = (mean(df[:, :tsumvar]), std(df[:, :tsumvar]), size(df, 1))
 
     # value labels and "Total"
     rownames = string.(vcat(vv1, "Total"))
-    # rownames = vcat([[x, " ", " "] for x in rownames]...)
 
     # colunm names
     colnames = string.(vcat(vv2, "Total"))
