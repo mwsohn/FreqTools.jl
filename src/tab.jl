@@ -342,6 +342,7 @@ function Base.show(io::IO, m::TAB2OUT)
     end
 end
 function _tab2matstr(m)
+    
     # covert omat to string values
     fmt = Printf.Format("%.$(m.digits)f")
     o = copy(m.omat)
