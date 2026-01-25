@@ -45,8 +45,8 @@ function tab(indf, var::Union{Symbol,String}; skipmissing=true, sort=false, summ
     end
     _tab1(freqtable(indf, var, skipmissing=skipmissing), sort=sort, digits=digits)
 end
-function tab(ivar::AbstractVector; skipmissing=true, sort=false)
-    _tab1(freqtable(ivar, skipmissing=skipmissing); sort=sort)
+function tab(ivar::AbstractVector; skipmissing=true, sort=false, digits = 2)
+    _tab1(freqtable(ivar, skipmissing=skipmissing); sort=sort, digits = digits)
 end
 function tab(indf,var1::Union{Symbol,String}, var2::Union{Symbol,String}; pct=:rce, maxrows=-1, maxcols=20, skipmissing=true, summarize=nothing, digits=2)
 
@@ -250,7 +250,6 @@ function _tab2(na::NamedArray; maxrows=-1, maxcols=20, pct=:rce, digits = 2, tes
 
     return TAB2OUT(d, rownames, colnames, string(join(dimnames(na), " ╲ ")), maxrows, maxcols, digits, tests)
 end
-
 
 function idxdict(vv1,vv2)
     dd = Dict()
