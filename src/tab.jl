@@ -43,7 +43,7 @@ function tab(indf, var::Union{Symbol,String}; skipmissing=true, sort=false, summ
     if summarize != nothing
         return _tab1summarize(Tables.getcolumn(indf, var), Tables.getcolumn(indf, summarize), skipmissing=skipmissing, digits = digits, sort = sort, varname=string(var))
     end
-    _tab1(freqtable(indf, var, skipmissing=skipmissing); sort=sort, digits=digits)
+    _tab1(freqtable(indf, var, skipmissing=skipmissing), sort=sort, digits=digits)
 end
 function tab(ivar::AbstractVector; skipmissing=true, sort=false)
     _tab1(freqtable(ivar, skipmissing=skipmissing); sort=sort)
@@ -118,15 +118,10 @@ function _tab1(na::NamedArray; sort=false, digits=2)
 
     if sort
         s = sortperm(na, rev=true)
-        arry = na[s]
-    else
-        arry = na.array
-    end
-
-    # value labels and "Total"
-    if sort
+        arry = na.array[s]
         rownames = vcat(string.(names(na)[1][s]), "Total")
     else
+        arry = na.array
         rownames = vcat(string.(names(na)[1]), "Total")
     end
 
@@ -139,6 +134,7 @@ function _tab1(na::NamedArray; sort=false, digits=2)
     # cumulative percents
     cumpct = 100 .* vcat(cumsum(arry, dims=1), counts[end]) ./ counts[end]
 
+    # combine them
     omat = hcat(counts, percents, cumpct)
 
     return TAB1OUT(omat, rownames, string(dimnames(na)[1]), digits)
