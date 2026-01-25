@@ -361,7 +361,7 @@ function _tab2matstr(m)
                     o[i, j] = string(repeat(".\n",elen-1),"0")
                 end
             else
-                tt = [ ismissing(x) ? "." : (typeof(x) <: Integer ? string(x) : Printf.format(fmt,x)) for x in t]
+                tt = [ ismissing(x) || isnan(x) ? "." : (typeof(x) <: Integer ? string(x) : Printf.format(fmt,x)) for x in t]
                 o[i,j] = join(tt,"\n")
             end
         end
