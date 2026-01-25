@@ -91,7 +91,7 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
         for i in 1:n3
             println("\n\n", na.dimnames[3], " = ", vals[i], "\n")
 
-            _tab2(na[:, :, i]; pct=pct, maxrows=maxrows, maxcols=maxcols)
+            _tab2(na[:, :, i]; pct=pct, digits=digits, maxrows=maxrows, maxcols=maxcols, tests = true)
         end
     else
         n3 = sort(unique(indf[!, var3]))
