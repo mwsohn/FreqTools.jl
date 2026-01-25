@@ -91,7 +91,7 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
         for i in 1:n3
             println("\n\n", na.dimnames[3], " = ", vals[i], "\n")
 
-            return _tab2(na[:, :, i], pct=pct, digits=digits, tests = true)
+            return _tab2(na[:, :, i], pct=pct, digits=digits, tests = true, maxrows=maxrows, maxcols=maxcols)
         end
     else
         n3 = sort(unique(indf[!, var3]))
@@ -212,7 +212,7 @@ function Base.show(io::IO, m::TAB1OUT2)
         vlines=[1])
 end
 
-function _tab2(na::NamedArray; pct=:rce, digits = 2, tests=true)
+function _tab2(na::NamedArray; pct=:rce, digits = 2, tests=true, maxrows=-1, maxcols=20)
 
     # counts
     counts = na.array
