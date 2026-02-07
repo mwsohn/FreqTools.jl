@@ -110,6 +110,19 @@ function _tab2matstr(m, digits)
     return o
 end
 
+struct TAB3OUT
+    omat::Vector
+    rownames::Vector{String}
+    colnames::Vector{String}
+    varnames::String
+    thirdname::String
+    thirdval::Vector
+    maxrows::Int64
+    maxcols::Int64
+    digits::Int8
+    tests::Bool
+end
+
 function Base.show(io::IO, m::TAB3OUT)
 
     fmt = Printf.Format("%.$(m.digits)f")
