@@ -18,12 +18,15 @@ using DataFrames, NamedArrays, Printf, PrettyTables,
 ##############################################################################
 
 export tab
+export TAB1OUT, TAB1OUT2, TAB2OUT, TAB3OUT
 
 ##############################################################################
 ##
 ## Load files
 ##
 ##############################################################################
+include("helper.jl")
 include("tab.jl")
+
 
 end
