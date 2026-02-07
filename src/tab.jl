@@ -86,15 +86,17 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
     vomat = []
     if summarize == nothing
         na = freqtable(indf, var1, var2, var3, skipmissing=skipmissing)
+
         # stratify the var3 (na.dimnames[3])
         n3 = size(na, 3)
         vals = na.dicts[3].keys
+        thirdnm = string(na.dimnames[3])
 
         for i in 1:n3
-            println("\n\n", na.dimnames[3], " = ", vals[i], "\n")
-
-            return _tab2(na[:, :, i], pct=pct, digits=digits, tests = true, maxrows=maxrows, maxcols=maxcols)
+            m = FreqTools._tab2(na[:, :, i], pct=pct, digits=digits, tests=true, maxrows=maxrows, maxcols=maxcols)
+            push!(vomat, m.omat)
         end
+        return TAB3OUT(vomat, m.rownames, m.colnames, m.varnames, thirdnm, vals, maxrows, maxcols, digits, tests)
     end
 
     if skipmissing
