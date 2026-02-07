@@ -72,7 +72,7 @@ function tab(indf,var1::Union{Symbol,String}, var2::Union{Symbol,String}; pct=:r
         digits=digits)
 end
 function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3::Union{Symbol,String};
-    pct=:rce, maxrows=-1, maxcols=20, skipmissing=true, summarize=nothing, digits=2)
+    pct=:rce, maxrows=-1, maxcols=20, skipmissing=true, summarize=nothing, digits=2, tests=false)
 
     s = Tables.schema(indf)
     for v in (var1, var2, var3)
