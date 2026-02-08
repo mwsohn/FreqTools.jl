@@ -99,11 +99,16 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
         return TAB3OUT(vomat, m.rownames, m.colnames, m.varnames, thirdnm, vals, maxrows, maxcols, digits, tests)
     end
 
+    # convert to a DataFrame
+    df = DataFrame(var1 = Tables.getcolumn(indf,var1),
+        var2=Tables.getcolumn(indf, var2),
+        var3=Tables.getcolumn(indf, var3)
+    )
+
     if skipmissing
-        vals = sort(unique(collect(skipmissing(Tables.getcolumn(indf, var3)))))
-    else
-        vals = sort(unique(Tables.getcolumn(indf, var3)))
+        df = dropmissing(df)
     end
+    vals = sort(unique(df[:,var3]))
     n3 = length(vals)
     thirdnm = string(var3)
 
