@@ -100,10 +100,14 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
     end
 
     # convert to a DataFrame
-    df = DataFrame(var1 = Tables.getcolumn(indf,var1),
-        var2=Tables.getcolumn(indf, var2),
-        var3=Tables.getcolumn(indf, var3)
-    )
+    if isa(indf, DataFrame)
+        df = indf[:,[var1,var2,var3]]
+    else
+        df = DataFrame(var1 = Tables.getcolumn(indf,var1),
+            var2=Tables.getcolumn(indf, var2),
+            var3=Tables.getcolumn(indf, var3)
+        )
+    end
 
     if skipmissing
         df = dropmissing(df)
@@ -113,10 +117,9 @@ function tab(indf, var1::Union{Symbol,String}, var2::Union{Symbol,String}, var3:
     thirdnm = string(var3)
 
     for v in vals
-        subdf = filter(x -> x[var3] == v, indf)
-        m = _tab2summarize(Tables.getcolumn(subdf, var1),
-            Tables.getcolumn(subdf, var2),
-            Tables.getcolumn(subdf, summarize); maxrows=maxrows, maxcols=maxcols,
+        subdf = filter(x -> x[var3] == v, df)
+        m = _tab2summarize(subdf[:, var1], subdf[:, var2], subdf[:, summarize]; 
+            maxrows=maxrows, maxcols=maxcols,
             digits=digits, varnames=string(var1, " ╲ ", var2))
         push!(vomat, m.omat)
     end
