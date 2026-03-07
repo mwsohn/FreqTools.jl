@@ -9,12 +9,13 @@ function Base.show(io::IO, m::TAB1OUT)
     fmt = Printf.Format("%.$(m.digits)f")
     PrettyTables.pretty_table(io, m.omat,
         row_labels=m.rownames,
-        row_label_column_title=string(m.varname),
-        header=["Counts", " Percent", "Cum Pct"],
-        formatters=(v, i, j) -> j in (2, 3) ? Printf.format(fmt, v) : @sprintf("%.0d", v),
-        crop=:none,
-        hlines=[0, 1, length(m.rownames), length(m.rownames) + 1],
-        vlines=[1])
+        stubhead_label=string(m.varname),
+        column_labels=["Counts", " Percent", "Cum Pct"],
+        formatters=[(v, i, j) -> j in (2, 3) ? Printf.format(fmt, v) : @sprintf("%.0d", v)],
+        table_format=TextTableFormat(;
+            @text__no_vertical_lines,
+            horizontal_lines_at_column_labels=[1],
+            vertical_line_after_row_label_column=true))
 end
 
 struct TAB1OUT2
@@ -31,12 +32,13 @@ function Base.show(io::IO, m::TAB1OUT2)
     pretty_table(io,
         m.omat,
         row_labels=m.rownames,
-        row_label_column_title=m.varname,
-        formatters=(v, _, j) -> isnan(v) ? "." : (j % 3 != 1 ? Printf.format(fmt, v) : string(v)),
-        header=m.colnames,
-        crop=:none,
-        hlines=vcat([0, 1], len, len + 1),
-        vlines=[1])
+        stubhead_label=m.varname,
+        formatters=[(v, _, j) -> isnan(v) ? "." : (j % 3 != 1 ? Printf.format(fmt, v) : string(v))],
+        column_labels=m.colnames,
+        table_format=TextTableFormat(;
+            @text__no_vertical_lines,
+            horizontal_lines_at_column_labels=[1],
+            vertical_line_after_row_label_column=true))
 end
 
 struct TAB2OUT
@@ -54,15 +56,16 @@ function Base.show(io::IO, m::TAB2OUT)
 
     pretty_table(io,
         _tab2matstr(m.omat, m.digits),
-        linebreaks=true,
+        line_breaks=true,
         row_labels=m.rownames,
-        row_label_column_title=m.varnames,
-        header=m.colnames,
-        crop=:none,
-        max_num_of_rows=m.maxrows,
-        max_num_of_columns=m.maxcols,
-        hlines=vcat([0, 1], [x + 1 for x in 1:length(m.rownames)]),
-        vlines=[1])
+        stubhead_label=m.varnames,
+        column_labels=m.colnames,
+        maxinum_number_of_rows=m.maxrows,
+        maximum_number_of_columns=m.maxcols,
+        table_format=TextTableFormat(;
+            @text__no_vertical_lines,
+            horizontal_lines_at_column_labels=[1],
+            vertical_line_after_row_label_column=true))
 
     if m.tests == true
         (i, j) = size(m.omat)
@@ -130,15 +133,16 @@ function Base.show(io::IO, m::TAB3OUT)
         println(io, "\n\n", m.thirdname, " = ", m.thirdval[i], "\n")
         pretty_table(io,
             _tab2matstr(m.omat[i], m.digits),
-            linebreaks=true,
+            line_breaks=true,
             row_labels=m.rownames,
-            row_label_column_title=m.varnames,
-            header=m.colnames,
-            crop=:none,
-            max_num_of_rows=m.maxrows,
-            max_num_of_columns=m.maxcols,
-            hlines=vcat([0, 1], [x + 1 for x in 1:length(m.rownames)]),
-            vlines=[1])
+            stubhead_label=m.varnames,
+            column_labels=m.colnames,
+            maximum_number_of_rows=m.maxrows,
+            maximum_number_of_columns=m.maxcols,
+            table_format=TextTableFormat(;
+                @text__no_vertical_lines,
+                horizontal_lines_at_column_labels=[1],
+                vertical_line_after_row_label_column=true))
 
         if m.tests == true
             (i, j) = size(m.omat[i])
