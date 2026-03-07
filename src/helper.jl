@@ -39,7 +39,7 @@ function Base.show(io::IO, m::TAB1OUT2)
         table_format=TextTableFormat(;
             @text__no_vertical_lines,
             horizontal_lines_at_column_labels=[1],
-            horizontal_line_after_data_rows=true,
+            horizontal_lines_at_data_rows=:all,
             vertical_line_after_row_label_column=true))
 end
 
@@ -67,7 +67,7 @@ function Base.show(io::IO, m::TAB2OUT)
         table_format=TextTableFormat(;
             @text__no_vertical_lines,
             horizontal_lines_at_column_labels=[1],
-            horizontal_line_after_data_rows=true,
+            horizontal_lines_at_data_rows=:all,
             vertical_line_after_row_label_column=true))
 
     if m.tests == true
@@ -145,7 +145,7 @@ function Base.show(io::IO, m::TAB3OUT)
             table_format=TextTableFormat(;
                 @text__no_vertical_lines,
                 horizontal_lines_at_column_labels=[1],
-                horizontal_line_after_data_rows = true,
+                horizontal_line_at_data_rows = :all,
                 vertical_line_after_row_label_column=true))
 
         if m.tests == true
