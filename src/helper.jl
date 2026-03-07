@@ -38,7 +38,8 @@ function Base.show(io::IO, m::TAB1OUT2)
         column_labels=m.colnames,
         table_format=TextTableFormat(;
             @text__no_vertical_lines,
-            horizontal_lines_at_column_labels=[1, length(m.rownames) + 1],
+            horizontal_lines_at_column_labels=[1],
+            horizontal_lines_at_data_rows=[length(m.rownames) - 1],
             vertical_line_after_row_label_column=true))
 end
 
@@ -65,7 +66,8 @@ function Base.show(io::IO, m::TAB2OUT)
         maximum_number_of_columns=m.maxcols,
         table_format=TextTableFormat(;
             @text__no_vertical_lines,
-            horizontal_lines_at_column_labels=[1, length(m.rownames) + 1],
+            horizontal_lines_at_column_labels=[1],
+            horizontal_lines_at_data_rows=[length(m.rownames) - 1],
             vertical_line_after_row_label_column=true))
 
     if m.tests == true
@@ -142,7 +144,8 @@ function Base.show(io::IO, m::TAB3OUT)
             maximum_number_of_columns=m.maxcols,
             table_format=TextTableFormat(;
                 @text__no_vertical_lines,
-                horizontal_lines_at_column_labels=[1, length(m.rownames)+1],
+                horizontal_lines_at_column_labels=[1],
+                horizontal_lines_at_data_rows=[length(m.rownames) - 1],
                 vertical_line_after_row_label_column=true))
 
         if m.tests == true
