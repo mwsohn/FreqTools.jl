@@ -30,7 +30,6 @@ struct TAB1OUT2
     varname::String
     digits::Int8
     maxrows::Int64
-    maxcols::Int64
 end
 function Base.show(io::IO, m::TAB1OUT2)
     fmt = Printf.Format("%.$(m.digits)f")
@@ -149,7 +148,6 @@ function Base.show(io::IO, m::TAB3OUT)
             stubhead_label=m.varnames,
             column_labels=m.colnames,
             maximum_number_of_rows=m.maxrows,
-            maximum_number_of_columns=m.maxcols,
             table_format=TextTableFormat(;
                 @text__no_vertical_lines,
                 horizontal_lines_at_column_labels=[1],
