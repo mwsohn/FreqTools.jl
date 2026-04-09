@@ -14,6 +14,8 @@ function Base.show(io::IO, m::TAB1OUT)
         stubhead_label=string(m.varname),
         column_labels=["Counts", " Percent", "Cum Pct"],
         formatters=[(v, i, j) -> j in (2, 3) ? Printf.format(fmt, v) : @sprintf("%.0d", v)],
+        maximum_number_of_rows=m.maxrows,
+        maximum_number_of_columns=m.maxcols,
         table_format=TextTableFormat(;
             @text__no_vertical_lines,
             horizontal_lines_at_column_labels=[1],
