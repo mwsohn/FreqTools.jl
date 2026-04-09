@@ -189,7 +189,7 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, 
         rownames = rownames[p]
     end
 
-    return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits, maxrows, maxcols)
+    return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits, maxrows)
 end
 
 function _tab2(na::NamedArray; pct=:rce, digits = 2, tests=true, maxrows=-1, maxcols=20)
