@@ -4,7 +4,6 @@ struct TAB1OUT
     varname::String
     digits::Int8
     maxrows::Int64
-    maxcols::Int64
 end
 
 function Base.show(io::IO, m::TAB1OUT)
