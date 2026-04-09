@@ -133,7 +133,7 @@ function tab(a::AbstractArray; pct=:rce, digits=2)
     end
 end
 
-function _tab1(na::NamedArray; sort=false, digits=2)
+function _tab1(na::NamedArray; maxrows=-1, maxcols=20, sort=false, digits=2)
 
     if sort
         s = sortperm(na, rev=true)
