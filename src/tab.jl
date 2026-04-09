@@ -34,7 +34,7 @@ function tab(na::NamedArray; skipmissing=true, pct=:rce, sort = false, digits=2)
     end
     throw(ArgumentError("Crosstabs for more than 3 variables are not currently supported."))
 end
-function tab(indf, var::Union{Symbol,String}; skipmissing=true, sort=false, summarize=nothing, digits = 2)
+function tab(indf, var::Union{Symbol,String}; maxrows=-1, maxcols = 20, skipmissing=true, sort=false, summarize=nothing, digits = 2)
     s = Tables.schema(indf)
     if in(Symbol(var), s.names) == false
         throw(ArgumentError("$var is not found in the input table."))
@@ -45,8 +45,8 @@ function tab(indf, var::Union{Symbol,String}; skipmissing=true, sort=false, summ
     end
     _tab1(freqtable(indf, var, skipmissing=skipmissing), sort=sort, digits=digits)
 end
-function tab(ivar::AbstractVector; skipmissing=true, sort=false, digits = 2)
-    _tab1(freqtable(ivar, skipmissing=skipmissing); sort=sort, digits = digits)
+function tab(ivar::AbstractVector; maxrows=maxrows, maxcols=maxcols, skipmissing=true, sort=false, digits = 2)
+    _tab1(freqtable(ivar, skipmissing=skipmissing); maxrows=maxrows, maxcols=maxcols, sort=sort, digits=digits)
 end
 function tab(indf,var1::Union{Symbol,String}, var2::Union{Symbol,String}; pct=:rce, maxrows=-1, maxcols=20, skipmissing=true, summarize=nothing, digits=2)
 
@@ -66,8 +66,8 @@ function tab(indf,var1::Union{Symbol,String}, var2::Union{Symbol,String}; pct=:r
     _tab2summarize(Tables.getcolumn(indf,var1), 
         Tables.getcolumn(indf,var2), 
         Tables.getcolumn(indf,summarize); 
-        maxrows=-1, 
-        maxcols=20,
+        maxrows=maxrows, 
+        maxcols=maxcols,
         varnames=string(var1, " ╲ ", var2),
         digits=digits)
 end
@@ -156,7 +156,7 @@ function _tab1(na::NamedArray; sort=false, digits=2)
     # combine them
     omat = hcat(counts, percents, cumpct)
 
-    return TAB1OUT(omat, rownames, string(dimnames(na)[1]), digits)
+    return TAB1OUT(omat, rownames, string(dimnames(na)[1]), digits, maxrows, maxcols)
 end
 
 function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, varname=nothing)
@@ -189,7 +189,7 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, 
         rownames = rownames[p]
     end
 
-    return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits)
+    return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits, maxrows, maxcols)
 end
 
 function _tab2(na::NamedArray; pct=:rce, digits = 2, tests=true, maxrows=-1, maxcols=20)
