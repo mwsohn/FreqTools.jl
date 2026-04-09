@@ -3,8 +3,8 @@ struct TAB1OUT
     rownames::Vector{String}
     varname::String
     digits::Int8
-    maxrows::Int32
-    maxcols::Int32
+    maxrows::Int64
+    maxcols::Int64
 end
 
 function Base.show(io::IO, m::TAB1OUT)
@@ -29,8 +29,8 @@ struct TAB1OUT2
     colnames::Vector{String}
     varname::String
     digits::Int8
-    maxrows::Int32
-    maxcols::Int32
+    maxrows::Int64
+    maxcols::Int64
 end
 function Base.show(io::IO, m::TAB1OUT2)
     fmt = Printf.Format("%.$(m.digits)f")
