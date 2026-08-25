@@ -28,6 +28,7 @@ struct TAB1OUT2
     varname::String
     digits::Int8
     maxrows::Int64
+    maxcols::Int64
 end
 function Base.show(io::IO, m::TAB1OUT2)
     fmt = Printf.Format("%.$(m.digits)f")
@@ -37,8 +38,9 @@ function Base.show(io::IO, m::TAB1OUT2)
         row_labels=m.rownames,
         stubhead_label=m.varname,
         formatters=[(v, _, j) -> isnan(v) ? "." : (j % 3 != 1 ? Printf.format(fmt, v) : string(v))],
-        column_labels=m.colnames,
-        maximum_number_of_rows=m.maxrows,
+        column_labels = m.colnames,
+        maximum_number_of_rows = m.maxrows,
+        maximum_number_of_columns = m.maxcols,
         table_format=TextTableFormat(;
             @text__no_vertical_lines,
             horizontal_lines_at_column_labels=[1],
@@ -51,10 +53,9 @@ struct TAB2OUT
     rownames::Vector{String}
     colnames::Vector{String}
     varnames::String
+    digits::Int8
     maxrows::Int64
     maxcols::Int64
-    digits::Int8
-    tests::Bool
 end
 
 function Base.show(io::IO, m::TAB2OUT)
