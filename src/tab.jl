@@ -192,7 +192,7 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, 
     return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits, -1)
 end
 
-function _tab2(na::NamedArray; pct=:rce, digits = 2, tests=true, maxrows=-1, maxcols=20)
+function _tab2(na::NamedArray; pct=:rce, digits = 2, maxrows=-1, maxcols=20)
 
     # counts
     counts = na.array
@@ -228,7 +228,7 @@ function _tab2(na::NamedArray; pct=:rce, digits = 2, tests=true, maxrows=-1, max
         end
     end
 
-    return TAB2OUT(d, rownames, colnames, string(join(dimnames(na), " ╲ ")), maxrows, maxcols, digits, tests)
+    return TAB2OUT(d, rownames, colnames, string(join(dimnames(na), " ╲ ")), digits, maxrows, maxcols)
 end
 
 function idxdict(vv1,vv2)
@@ -277,5 +277,5 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     # colunm names
     colnames = string.(vcat(vv2, "Total"))
 
-    return TAB2OUT(omat, rownames, colnames, varnames == nothing ? "" : varnames, maxrows, maxcols, digits, false)
+    return TAB2OUT(omat, rownames, colnames, varnames == nothing ? "" : varnames, digits, maxrows, maxcols)
 end
