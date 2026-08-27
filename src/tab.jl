@@ -159,7 +159,7 @@ function _tab1(na::NamedArray; maxrows=-1, sort=false, digits=2)
     return TAB1OUT(omat, rownames, string(dimnames(na)[1]), digits, maxrows)
 end
 
-function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, varname=nothing)
+function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, varname=nothing, maxrows = maxrows)
 
     df = DataFrame(t=var, s=sumvar)
     if skipmissing
@@ -189,7 +189,7 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, 
         rownames = rownames[p]
     end
 
-    return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits, -1)
+    return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits, maxrows)
 end
 
 function _tab2(na::NamedArray; pct=:rce, digits = 2, maxrows=-1, maxcols=20)
