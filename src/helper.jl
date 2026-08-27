@@ -20,7 +20,7 @@ function Base.show(io::IO, m::TAB1OUT)
             horizontal_lines_at_data_rows = [length(m.rownames)-1],
             vertical_line_after_row_label_column=true))
 
-    println(maximum_number_of_rows)
+    println(io,maximum_number_of_rows)
 end
 
 struct TAB1OUT2
