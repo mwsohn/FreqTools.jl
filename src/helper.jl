@@ -13,7 +13,8 @@ function Base.show(io::IO, m::TAB1OUT)
         stubhead_label=string(m.varname),
         column_labels=["Counts", " Percent", "Cum Pct"],
         formatters=[(v, i, j) -> j in (2, 3) ? Printf.format(fmt, v) : @sprintf("%.0d", v)],
-        maximum_number_of_rows = m.maxrows,
+        fit_table_in_display_vertically=false,
+        maximum_number_of_rows=m.maxrows,
         table_format=TextTableFormat(;
             @text__no_vertical_lines,
             horizontal_lines_at_column_labels=[1],
@@ -40,7 +41,8 @@ function Base.show(io::IO, m::TAB1OUT2)
         stubhead_label=m.varname,
         formatters=[(v, _, j) -> isnan(v) ? "." : (j % 3 != 1 ? Printf.format(fmt, v) : string(v))],
         column_labels = m.colnames,
-        maximum_number_of_rows = m.maxrows,
+        fit_table_in_display_vertically=false,
+        maximum_number_of_rows=m.maxrows,
         table_format=TextTableFormat(;
             @text__no_vertical_lines,
             horizontal_lines_at_column_labels=[1],
@@ -66,6 +68,7 @@ function Base.show(io::IO, m::TAB2OUT)
         row_labels=m.rownames,
         stubhead_label=m.varnames,
         column_labels=m.colnames,
+        fit_table_in_display_vertically=false,
         maximum_number_of_rows=m.maxrows,
         maximum_number_of_columns=m.maxcols,
         table_format=TextTableFormat(;
@@ -144,6 +147,7 @@ function Base.show(io::IO, m::TAB3OUT)
             row_labels=m.rownames,
             stubhead_label=m.varnames,
             column_labels=m.colnames,
+            fit_table_in_display_vertically=false,
             maximum_number_of_rows=m.maxrows,
             table_format=TextTableFormat(;
                 @text__no_vertical_lines,
