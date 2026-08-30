@@ -192,7 +192,7 @@ function _tab1summarize(var, sumvar; skipmissing=false, digits=2, sort = false, 
     return TAB1OUT2(omat, string.(rownames), ["N", "Mean", "SD"], varname == nothing ? "" : varname, digits, maxrows)
 end
 
-function _tab2(na::NamedArray; pct=:rce, digits = 2, maxrows=-1, maxcols=20)
+function _tab2(na::NamedArray; pct=:rce, digits = 2, maxrows=-1, maxcols=20, tests=true)
 
     # counts
     counts = na.array
@@ -228,7 +228,7 @@ function _tab2(na::NamedArray; pct=:rce, digits = 2, maxrows=-1, maxcols=20)
         end
     end
 
-    return TAB2OUT(d, rownames, colnames, string(join(dimnames(na), " ╲ ")), digits, maxrows, maxcols)
+    return TAB2OUT(d, rownames, colnames, string(join(dimnames(na), " ╲ ")), digits, maxrows, maxcols, tests)
 end
 
 function idxdict(vv1,vv2)
@@ -241,7 +241,7 @@ function idxdict(vv1,vv2)
     return dd
 end
 
-function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=nothing, varnames = nothing, digits=2)
+function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=nothing, varnames = nothing, digits=2, tests=true)
 
     if skipmissing == true
         df = dropmissing(DataFrame(t1=var1, t2=var2, tsumvar=sumvar))
@@ -277,5 +277,5 @@ function _tab2summarize(var1, var2, sumvar; maxrows=-1, maxcols=20, skipmissing=
     # colunm names
     colnames = string.(vcat(vv2, "Total"))
 
-    return TAB2OUT(omat, rownames, colnames, varnames == nothing ? "" : varnames, digits, maxrows, maxcols)
+    return TAB2OUT(omat, rownames, colnames, varnames == nothing ? "" : varnames, digits, maxrows, maxcols, tests)
 end
